@@ -2,13 +2,34 @@ using UnityEngine;
 
 public class CollisionDetect : MonoBehaviour
 {
+    [SerializeField] int damage = 1;
 
-    [SerializeField] GameObject thePlayer;
-    [SerializeField] GameObject playerAnim;
+    private void DamageIfPlayer(Component hit)
+    {
+        var health = hit.GetComponentInParent<PlayerHealth>();
+        if (health != null)
+        {
+            health.TakeDamage(damage, transform.position);
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
-        thePlayer.GetComponent<PlayerMovement>().enabled = false;
-        playerAnim.GetComponent<Animator>().Play("CharacterArmature_Death");
+        DamageIfPlayer(other);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        DamageIfPlayer(collision.collider);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        DamageIfPlayer(other);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        DamageIfPlayer(collision.collider);
     }
 }
