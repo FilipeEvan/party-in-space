@@ -9,12 +9,21 @@ public class PlayerMovement : MonoBehaviour
     public float leftLimit = 5.5f;
     public float jumpForce = 10f;
 
+    [Header("Áudio")]
+    public AudioSource corridaAudio;
+    public float volumeCorrida = 1f;
+
     Rigidbody rb;
     Rigidbody2D rb2d;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        if (corridaAudio == null)
+        {
+            corridaAudio = GetComponent<AudioSource>();
+        }
+
         rb = GetComponent<Rigidbody>();
         if (rb == null)
         {
@@ -79,6 +88,8 @@ public class PlayerMovement : MonoBehaviour
                 rb2d.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             }
         }
+
+        AtualizarSomCorrida();
     }
 
     bool IsGrounded()
@@ -98,5 +109,33 @@ public class PlayerMovement : MonoBehaviour
 
         // Se não tiver rigidbody, considera sempre "no chão" para não travar o pulo
         return true;
+    }
+
+    void AtualizarSomCorrida()
+    {
+        if (corridaAudio == null) return;
+
+        // Considera que o personagem está "correndo" enquanto o jogo estiver rodando
+        // (playerSpeed > 0), o Time.timeScale > 0 e o SFX está habilitado.
+        bool deveTocar = MusicManager.SfxEnabled &&
+                         Time.timeScale > 0.01f &&
+                         playerSpeed > 0.01f;
+
+        corridaAudio.volume = volumeCorrida;
+
+        if (deveTocar)
+        {
+            if (!corridaAudio.isPlaying)
+            {
+                corridaAudio.Play();
+            }
+        }
+        else
+        {
+            if (corridaAudio.isPlaying)
+            {
+                corridaAudio.Pause();
+            }
+        }
     }
 }

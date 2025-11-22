@@ -1,45 +1,52 @@
 using UnityEngine;
 
-// Attach to Rover_2. When the player enters a long-range detection
-// zone that is greater than the enemies' detection range, the rover
-// charges in a straight line following its own orientation (local axis),
-// capturing the direction at the moment of detection (no homing).
+// Anexe ao Rover_2. Quando o jogador entra em uma zona de detecção
+// de longo alcance, maior que o alcance dos inimigos, o rover
+// avança em linha reta seguindo sua própria orientação (eixo local),
+// capturando a direção no momento da detecção (sem perseguição).
 public class RoverStraightChase : MonoBehaviour
 {
-    [Header("Targeting")]
+    [Header("Alvo")]
     public bool autoFindTarget = true;
     public Transform target; // auto-resolved from PlayerHealth/PlayerMovement
 
-    [Header("Ranges")]
-    [Tooltip("Rover detects the player within this distance.")]
+    [Header("Alcances")]
+    [Tooltip("O Rover detecta o jogador dentro dessa distância.")]
     public float roverDetectRange = 28f;
-    [Tooltip("Enemy detection to compare against. If <= 0, tries to read from EnemyLargeChase in the scene, otherwise uses this value.")]
+    [Tooltip("Alcance de detecção do inimigo para comparação. Se <= 0, tenta ler de EnemyLargeChase na cena, caso contrário usa este valor.")]
     public float enemyDetectRangeOverride = -1f; // e.g., 15f like EnemyLargeChase
 
-    [Header("Movement")]
+    [Header("Movimento")]
     public float speed = 12f;
-    [Tooltip("Lock Y while moving so the rover stays on its original height.")]
+    [Tooltip("Travar o Y enquanto se move para manter o rover na altura original.")]
     public bool lockInitialY = true;
     public float rotationSpeed = 20f; // not used unless alignVisualToDirection is enabled
 
-    [Header("Orientation")]
-    public Transform forwardReference; // optional: use this transform's local axis
+    [Header("Orientação")]
+    public Transform forwardReference; // opcional: usar o eixo local deste transform
     public enum LocalAxis { Z, X }
     public enum ChargeDirectionMode { LocalAxis, WorldX, WorldZ }
     public ChargeDirectionMode directionMode = ChargeDirectionMode.LocalAxis;
-    public LocalAxis axis = LocalAxis.Z; // when using LocalAxis mode
-    public bool invertDirection = false; // flips the chosen direction
-    public bool alignVisualToDirection = false; // rotate object to face charge direction on start
+    public LocalAxis axis = LocalAxis.Z; // quando usando modo LocalAxis
+    public bool invertDirection = false; // inverte a direção escolhida
+    public bool alignVisualToDirection = false; // rotaciona o objeto para olhar na direção do avanço no início
 
-    [Header("Charge")]
-    [Tooltip("Duration of the straight charge before stopping. Set <= 0 for infinite.")]
+    [Header("Investida")]
+    [Tooltip("Duração da investida reta antes de parar. Defina <= 0 para infinito.")]
     public float chargeDuration = 2.5f;
-    public bool repeatCharges = true; // if false, only charges once per entry
+    public bool repeatCharges = true; // se false, avança apenas uma vez por entrada
 
-    [Header("Animation (optional)")]
-    public Animator animator; // optional
-    public string runBoolParam = "Run"; // set true while charging
-    public string speedFloatParam = "Speed"; // optional: sets current speed
+    [Header("Animação (opcional)")]
+    public Animator animator; // opcional
+    public string runBoolParam = "Run"; // fica true enquanto está avançando
+    public string speedFloatParam = "Speed"; // opcional: define a velocidade atual
+
+    [Header("Áudio")]
+    [Tooltip("Som em loop do movimento do rover.")]
+    public AudioSource audioMotor;
+    [Range(0f,1f)] public float volumeMotor = 1f;
+    [Tooltip("Se verdadeiro, o som do motor começa assim que o rover for renderizado (OnBecameVisible). Se falso, começa apenas ao iniciar a investida.")]
+    public bool motorIniciaAoSerRenderizado = false;
 
     float _enemyDetectRangeCached = 15f;
     bool _charging;
@@ -50,7 +57,7 @@ public class RoverStraightChase : MonoBehaviour
 
     void Reset()
     {
-        // Defaults suitable for Rover_2
+        // Valores padrão adequados para Rover_2
         animator = GetComponentInChildren<Animator>();
         forwardReference = null; // use own transform
         directionMode = ChargeDirectionMode.LocalAxis;
@@ -69,6 +76,14 @@ public class RoverStraightChase : MonoBehaviour
         if (animator == null) animator = GetComponentInChildren<Animator>();
         _yLock = transform.position.y;
         CacheEnemyDetectRange();
+
+        if (audioMotor != null)
+        {
+            audioMotor.loop = true;
+            audioMotor.playOnAwake = false;
+            audioMotor.volume = volumeMotor;
+            audioMotor.Stop();
+        }
     }
 
     void CacheEnemyDetectRange()
@@ -120,6 +135,8 @@ public class RoverStraightChase : MonoBehaviour
         {
             ChargeStep();
         }
+
+        AtualizarAudioMotor();
     }
 
     void BeginCharge()
@@ -157,6 +174,12 @@ public class RoverStraightChase : MonoBehaviour
             _chargeEndTime = float.PositiveInfinity;
 
         SetAnim(true, speed);
+        // Rover_2: inicia som do motor quando começa a investida
+        if (!motorIniciaAoSerRenderizado && audioMotor != null && MusicManager.SfxEnabled && !audioMotor.isPlaying)
+        {
+            audioMotor.volume = volumeMotor;
+            audioMotor.Play();
+        }
     }
 
     void ChargeStep()
@@ -173,6 +196,29 @@ public class RoverStraightChase : MonoBehaviour
         {
             _charging = false;
             SetAnim(false, 0f);
+            // Rover_2: para o som quando termina a investida
+            if (!motorIniciaAoSerRenderizado && audioMotor != null && audioMotor.isPlaying)
+            {
+                audioMotor.Stop();
+            }
+        }
+    }
+
+    void OnBecameVisible()
+    {
+        // Rover_Round: som começa ao ser renderizado
+        if (motorIniciaAoSerRenderizado && audioMotor != null && MusicManager.SfxEnabled && !audioMotor.isPlaying)
+        {
+            audioMotor.volume = volumeMotor;
+            audioMotor.Play();
+        }
+    }
+
+    void OnBecameInvisible()
+    {
+        if (motorIniciaAoSerRenderizado && audioMotor != null && audioMotor.isPlaying)
+        {
+            audioMotor.Stop();
         }
     }
 
@@ -183,6 +229,16 @@ public class RoverStraightChase : MonoBehaviour
             animator.SetBool(runBoolParam, running);
         if (!string.IsNullOrEmpty(speedFloatParam) && HasFloatParam(speedFloatParam))
             animator.SetFloat(speedFloatParam, curSpeed);
+    }
+
+    void AtualizarAudioMotor()
+    {
+        if (audioMotor == null) return;
+
+        // Apenas respeita a flag global de efeitos:
+        // se SomJogo estiver desligado, silencia o motor.
+        audioMotor.mute = !MusicManager.SfxEnabled;
+        audioMotor.volume = volumeMotor;
     }
 
     bool HasBoolParam(string name)

@@ -15,6 +15,8 @@ public class PlayerHealth : MonoBehaviour
     [Header("Death/Animation")]
     public Animator animator; // opcional: arraste seu Animator aqui
     public string deathStateName = "CharacterArmature_Death";
+    [Tooltip("Tempo extra (segundos) após a animação de morte antes da tela de Game Over aparecer.")]
+    public float deathGameOverExtraDelay = 0.7f;
     [Header("Heal/Animation")]
     public string healTriggerName = "Heal"; // deixa vazio se preferir usar estado
     public string healStateName = "";       // ex.: "CharacterArmature_Heal"
@@ -27,6 +29,8 @@ public class PlayerHealth : MonoBehaviour
 
     public event Action<int, int> HealthChanged; // (current, max)
     public event Action Died;
+    // Disparado após terminar a animação de morte (ou um pequeno atraso, se não houver animação)
+    public event Action DeathAnimationFinished;
 
     void Awake()
     {
@@ -176,8 +180,30 @@ public class PlayerHealth : MonoBehaviour
         invincible = false;
         RestoreOriginalRendererStates();
 
+        // Para qualquer movimento de física (evita "escorregar" após a morte)
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+        var rb2d = GetComponent<Rigidbody2D>();
+        if (rb2d != null)
+        {
+            rb2d.linearVelocity = Vector2.zero;
+            rb2d.angularVelocity = 0f;
+        }
+
         var movement = GetComponent<PlayerMovement>();
-        if (movement != null) movement.enabled = false;
+        if (movement != null)
+        {
+            // para o som de corrida imediatamente ao morrer
+            if (movement.corridaAudio != null && movement.corridaAudio.isPlaying)
+            {
+                movement.corridaAudio.Stop();
+            }
+            movement.enabled = false;
+        }
         
         // Tenta localizar Animator automaticamente se não estiver setado
         if (animator == null) animator = GetComponentInChildren<Animator>();
@@ -189,6 +215,49 @@ public class PlayerHealth : MonoBehaviour
 
         Debug.Log("Player morreu (vida = 0)");
         Died?.Invoke();
+
+        // Inicia acompanhamento da animação de morte para avisar quando terminar
+        StartCoroutine(DeathAnimationSequence());
+    }
+
+    IEnumerator DeathAnimationSequence()
+    {
+        float extra = Mathf.Max(0f, deathGameOverExtraDelay);
+
+        // Se não houver animator ou estado de morte, espera um pequeno tempo e dispara mesmo assim
+        if (animator == null || string.IsNullOrEmpty(deathStateName))
+        {
+            yield return new WaitForSeconds(0.8f + extra);
+            DeathAnimationFinished?.Invoke();
+            yield break;
+        }
+
+        // Aguarda 1 frame para garantir que o Animator trocou de estado
+        yield return null;
+
+        float minTime = 0.5f;
+        float waitTime = minTime;
+
+        try
+        {
+            var info = animator.GetCurrentAnimatorStateInfo(0);
+            // Usa o comprimento do estado atual como base, se for maior que o mínimo
+            if (info.length > 0.01f)
+            {
+                waitTime = Mathf.Max(minTime, info.length / Mathf.Max(0.01f, info.speed));
+            }
+        }
+        catch
+        {
+            // Se algo der errado, usa o tempo mínimo
+            waitTime = minTime;
+        }
+
+        waitTime += extra;
+
+        yield return new WaitForSeconds(waitTime);
+
+        DeathAnimationFinished?.Invoke();
     }
 
     void StartInvincibility()

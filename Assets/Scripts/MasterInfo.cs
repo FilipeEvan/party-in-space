@@ -55,7 +55,7 @@ public class MasterInfo : MonoBehaviour
     {
         if (scoreText != null)
         {
-            scoreText.text = "SCORE: " + Mathf.FloorToInt(score);
+            scoreText.text = "PONTOS: " + Mathf.FloorToInt(score);
         }
     }
 
@@ -63,7 +63,12 @@ public class MasterInfo : MonoBehaviour
 
     void FindScoreText()
     {
-        var go = GameObject.Find("ScoreText");
+        // Preferimos o texto "CoinCount" da cena, se existir
+        var go = GameObject.Find("CoinCount");
+        if (go == null)
+        {
+            go = GameObject.Find("ScoreText");
+        }
         if (go != null)
         {
             scoreText = go.GetComponent<TMP_Text>();

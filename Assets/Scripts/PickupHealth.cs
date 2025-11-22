@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Anexe este script ao GameObject do tipo "Pickup_Health".
-// Requisitos: collider (Trigger ou colisão normal) e, em pelo menos um dos dois (player ou pickup), um Rigidbody/Rigidbody2D.
+// Requisitos: collider (Trigger ou colisão normal) e, em pelo menos um dos dois (jogador ou pickup), um Rigidbody/Rigidbody2D.
 public class PickupHealth : MonoBehaviour
 {
     [Header("Healing")]

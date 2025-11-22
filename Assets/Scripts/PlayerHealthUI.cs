@@ -4,11 +4,11 @@ using TMPro;
 
 public class PlayerHealthUI : MonoBehaviour
 {
-    [Header("References")]
+    [Header("Referências")]
     public PlayerHealth player;
     public Image[] heartImages; // opcional: assigne 3 imagens de coração
     public TMP_Text healthText; // opcional: exibir ♥♥♡ ou 2/3
-    [Header("Hearts UI Options")]
+    [Header("Opções de Corações no HUD")]
     public bool showHeartsAsSymbols = false; // padrão numérico para evitar quadrados em fontes sem ♥/♡
     public Sprite fullHeartSprite;
     public Sprite emptyHeartSprite;

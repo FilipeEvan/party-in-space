@@ -1,23 +1,23 @@
 using UnityEngine;
 
-// Attach to the Pickup_Jar prefab. Shares the same hover/rotate
-// movement as Pickup_Health but grants temporary invulnerability
-// to the player on pickup.
+// Anexe ao prefab Pickup_Jar. Compartilha o mesmo movimento de
+// flutuar/girar do Pickup_Health, mas concede invulnerabilidade temporária
+// ao jogador ao coletar.
 public class PickupJar : MonoBehaviour
 {
-    [Header("Invulnerability")]
+    [Header("Invulnerabilidade")]
     public float invulnerabilitySeconds = 4f;
-    [Header("Blink Visuals")]
-    public Color tintColor = new Color(1f, 0.92f, 0.1f, 1f); // strong yellow
-    [Range(0f,1f)] public float tintStrength = 0.75f; // intensity of the tint
+    [Header("Visual do Brilho")]
+    public Color tintColor = new Color(1f, 0.92f, 0.1f, 1f); // amarelo forte
+    [Range(0f,1f)] public float tintStrength = 0.75f; // intensidade do brilho
     public bool useEmissionGlow = true;
     [Min(0f)] public float emissionIntensity = 2.5f;
 
-    [Header("Motion (same as Pickup_Health)")]
+    [Header("Movimento (igual ao Pickup_Health)")]
     public float rotateSpeed = 60f;
     public float yMin = 1.57f;
     public float yMax = 1.698f;
-    [Tooltip("Full period (up+down) in seconds. Higher = slower/smoother.")]
+    [Tooltip("Período completo (subida+descida) em segundos. Maior = mais lento/suave.")]
     public float floatPeriod = 2.8f;
 
     float phaseOffset;
@@ -37,10 +37,10 @@ public class PickupJar : MonoBehaviour
 
     void Update()
     {
-        // Rotate around global Y
+        // Rotação em torno do Y global
         transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f, Space.World);
 
-        // Hover vertically like Pickup_Health
+        // Flutuação vertical como o Pickup_Health
         if (omega <= 0f) omega = 2f * Mathf.PI / 2.8f;
         var pos = transform.position;
         pos.y = midY + amplitude * Mathf.Sin(Time.time * omega + phaseOffset);
@@ -57,8 +57,8 @@ public class PickupJar : MonoBehaviour
         var health = hit.GetComponentInParent<PlayerHealth>();
         if (health == null) return;
 
-        // Yellow blink during invulnerability with adjustable intensity
-        // Use emission-only blinking to avoid shader color quirks producing blue tint
+        // Piscar amarelo durante a invulnerabilidade com intensidade ajustável
+        // Usa brilho apenas na emissão para evitar problemas de cor azul em alguns shaders
         health.GrantInvulnerabilityTinted(invulnerabilitySeconds, tintColor, tintStrength, useEmissionGlow, emissionIntensity, false);
         gameObject.SetActive(false);
     }

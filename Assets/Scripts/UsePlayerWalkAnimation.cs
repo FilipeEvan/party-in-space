@@ -1,22 +1,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Attach this to Enemy_Large (or any enemy).
-// It finds the player's walking AnimationClip and overrides any
-// "walk" clips in this Animator to use the same clip via AnimatorOverrideController.
+// Anexe este script ao Enemy_Large (ou qualquer inimigo).
+// Ele encontra o AnimationClip de caminhada do player e substitui
+// os clipes com a palavra-chave "walk" neste Animator para usar o mesmo clipe via AnimatorOverrideController.
 public class UsePlayerWalkAnimation : MonoBehaviour
 {
-    [Header("References")]
-    public Animator enemyAnimator; // default: GetComponentInChildren<Animator>()
-    public Animator playerAnimator; // default: Player's Animator (Health/Movement)
+    [Header("Referências")]
+    public Animator enemyAnimator; // padrão: GetComponentInChildren<Animator>()
+    public Animator playerAnimator; // padrão: Animator do Player (Health/Movement)
 
-    [Header("Matching")]
-    [Tooltip("Keyword used to find walk clips in both Player and Enemy controllers.")]
+    [Header("Correspondência")]
+    [Tooltip("Palavra-chave usada para encontrar clipes de caminhada nos controllers do Player e do Inimigo.")]
     public string walkKeyword = "walk";
-    [Tooltip("Keyword used to find run clips in both Player and Enemy controllers.")]
+    [Tooltip("Palavra-chave usada para encontrar clipes de corrida nos controllers do Player e do Inimigo.")]
     public string runKeyword = "run";
 
-    [Tooltip("Apply override on Start automatically.")]
+    [Tooltip("Aplicar override automaticamente no Start.")]
     public bool applyOnStart = true;
 
     void Reset()

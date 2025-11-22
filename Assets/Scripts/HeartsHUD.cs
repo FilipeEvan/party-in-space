@@ -9,7 +9,7 @@ using TMPro;
 // Ele cria e atualiza automaticamente os ícones conforme a vida do jogador.
 public class HeartsHUD : MonoBehaviour
 {
-    [Header("References")]
+    [Header("Referências")]
     public PlayerHealth player;
     public Sprite fullHeartSprite;
     public Sprite emptyHeartSprite;
